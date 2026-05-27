@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniMarket Alberdi – San Rafael, Mendoza</title>
+
+  <!-- Google Fonts: Art Déco flavour -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Cinzel+Decorative:wght@400;700&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Firebase SDKs (ES Module via CDN) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+      "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+    }
+  }
+  </script>
+
+<style>
+  /* ─── CSS VARIABLES ─── */
+  :root {
+    --black:        #0d0d0d;
+    --iron:         #1a1a1a;
+    --iron-mid:     #2a2829;
+    --iron-light:   #3c3838;
+    --copper:       #b87333;
+    --copper-light: #d4956a;
+    --gold:         #c9a84c;
+    --gold-light:   #e8cb7a;
+    --cream:        #f5ede0;
+    --cream-dark:   #e0d0b8;
+    --rust:         #8b3a2a;
+    --wood:         #5c3d1e;
+    --wood-light:   #7a5230;
+    --blue-arg:     #74acdf;
+    --white-arg:    #ffffff;
+
+    --font-title:  'Cinzel Decorative', serif;
+    --font-body:   'Cormorant Garamond', serif;
+    --font-ui:     'Raleway', sans-serif;
+
+    --shadow-iron: 0 4px 24px rgba(0,0,0,0.7), inset 0 1px 0 rgba(200,168,76,0.15);
+    --shadow-gold: 0 0 20px rgba(201,168,76,0.4);
+    --border-iron: 2px solid var(--iron-light);
+    --border-gold: 1px solid var(--gold);
+  }
+
+  /* ─── RESET & BASE ─── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--black);
+    color: var(--cream);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Wood-grain texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(
+        92deg,
+        transparent 0px,
+        transparent 3px,
+        rgba(92,61,30,0.04) 3px,
+        rgba(92,61,30,0.04) 6px
+      ),
+      repeating-linear-gradient(
+        180deg,
+        transparent 0px,
+        transparent 40px,
+        rgba(0,0,0,0.06) 40px,
+        rgba(0,0,0,0.06) 41px
+      );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── IRON FRAME MIXIN ─── */
+  .iron-frame {
+    background: linear-gradient(145deg, var(--iron) 0%, var(--iron-mid) 50%, var(--iron) 100%);
+    border: var(--border-iron);
+    box-shadow: var(--shadow-iron),
+                inset 0 0 40px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .iron-frame::before, .iron-frame::after {
+    content: '';
+    position: absolute;
+    border: var(--border-gold);
+    inset: 6px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .iron-frame::after {
+    inset: 10px;
+    border-color: rgba(201,168,76,0.3);
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 20px 0;
+    background: linear-gradient(180deg, rgba(26,26,26,0.98) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+  }
+
+  .visit-counter {
+    position: absolute;
+    top: 16px;
+    right: 24px;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(201,168,76,0.5);
+  }
+
+  .visit-counter span {
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  .logo-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-img {
+    width: 140px;
+    height: 140px;
+    object-fit: contain;
+    border-radius: 50%;
+    border: 2px solid var(--copper);
+    box-shadow: 0 0 30px rgba(184,115,51,0.4), var(--shadow-iron);
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
+    animation: logoFloat 4s ease-in-out infinite;
+  }
+
+  @keyframes logoFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .logo-title {
+    font-family: var(--font-title);
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(201,168,76,0.6), 2px 2px 0 rgba(0,0,0,0.8);
+    letter-spacing: 4px;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .logo-subtitle {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--copper-light);
+    text-align: center;
+    margin-top: -4px;
+  }
+
+  /* Decorative divider */
+  .art-deco-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 600px;
+    margin: 16px auto 0;
+    padding-bottom: 20px;
+  }
+
+  .art-deco-divider::before, .art-deco-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .art-deco-divider span {
+    color: var(--gold);
+    font-size: 18px;
+  }
+
+  /* ─── MAIN LAYOUT ─── */
+  main {
+    position: relative;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    grid-template-rows: auto auto;
+    gap: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 20px 40px;
+  }
+
+  @media (max-width: 768px) {
+    main {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ─── HERO / CENTRO ─── */
+  .hero-center {
+    grid-column: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    padding: 40px 30px;
+    min-height: 420px;
+  }
+
+  .hero-tagline {
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+    color: var(--cream);
+    font-style: italic;
+    line-height: 1.4;
+    max-width: 500px;
+  }
+
+  .hero-tagline em {
+    color: var(--gold-light);
+    font-style: normal;
+  }
+
+  /* Cart Button */
+  .btn-cart {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(145deg, var(--iron) 0%, #222 50%, var(--iron) 100%);
+    border: 2px solid var(--copper);
+    border-radius: 4px;
+    padding: 24px 40px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-iron), 0 0 0 1px rgba(184,115,51,0.2);
+    font-family: var(--font-title);
+    color: var(--gold);
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .btn-cart:hover {
+    border-color: var(--gold);
+    box-shadow: var(--shadow-iron), var(--shadow-gold);
+    transform: translateY(-2px);
+  }
+
+  .btn-cart:active { transform: translateY(0); }
+
+  .cart-icon-3d {
+    font-size: 52px;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+    transition: transform 0.3s ease;
+    animation: cartPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes cartPulse {
+    0%, 100% { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6)); }
+    50% { filter: drop-shadow(0 4px 16px rgba(201,168,76,0.5)); }
+  }
+
+  .btn-cart:hover .cart-icon-3d { transform: scale(1.1) rotate(-5deg); }
+
+  /* Corner ornaments */
+  .corner-ornament {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-color: var(--copper);
+    border-style: solid;
+  }
+
+  .corner-ornament.tl { top: 6px; left: 6px; border-width: 2px 0 0 2px; }
+  .corner-ornament.tr { top: 6px; right: 6px; border-width: 2px 2px 0 0; }
+  .corner-ornament.bl { bottom: 6px; left: 6px; border-width: 0 0 2px 2px; }
+  .corner-ornament.br { bottom: 6px; right: 6px; border-width: 0 2px 2px 0; }
+
+  /* Features row */
+  .features-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .feature-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 2px;
+    padding: 8px 16px;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--cream-dark);
+  }
+
+  .feature-badge span { font-size: 18px; }
+
+  /* ─── PANEL OFERTAS (DERECHA) ─── */
+  .panel-ofertas {
+    grid-column: 2;
+    grid-row: 1;
+    border-radius: 2px;
+    padding: 24px 18px;
+    min-height: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  @media (max-width: 768px) {
+    .panel-ofertas { grid-column: 1; }
+  }
+
+  .panel-title {
+    font-family: var(--font-title);
+    font-size: 0.7rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-align: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Carousel */
+  .ofertas-carousel {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .oferta-slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .oferta-slide.active {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .oferta-nombre {
+    font-family: var(--font-body);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--cream);
+    line-height: 1.2;
+  }
+
+  .oferta-emoji { font-size: 40px; }
+
+  .oferta-precio-normal {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: rgba(245,237,224,0.45);
+    text-decoration: line-through;
+  }
+
+  .oferta-precio-oferta {
+    font-family: var(--font-title);
+    font-size: 2rem;
+    color: var(--gold-light);
+    text-shadow: 0 0 20px rgba(201,168,76,0.5);
+  }
+
+  .oferta-vigencia {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--copper-light);
+    border-top: 1px solid rgba(201,168,76,0.2);
+    padding-top: 8px;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Fallback / En camino */
+  .oferta-fallback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    height: 100%;
+    text-align: center;
+    padding: 10px;
+  }
+
+  .oferta-fallback-icon { font-size: 38px; }
+
+  .oferta-fallback-title {
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--gold-light);
+    font-style: italic;
+  }
+
+  .oferta-fallback-text {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--cream-dark);
+    opacity: 0.7;
+    line-height: 1.5;
+  }
+
+  /* Dots */
+  .carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 6px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .carousel-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--iron-light);
+    border: 1px solid var(--copper);
+    transition: background 0.3s;
+    cursor: pointer;
+  }
+
+  .carousel-dot.active { background: var(--gold); }
+
+  /* ─── MAPA ─── */
+  .section-mapa {
+    grid-column: 1 / -1;
+    border-radius: 2px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .mapa-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    padding-bottom: 12px;
+  }
+
+  .mapa-icon { font-size: 24px; }
+
+  .mapa-titulo {
+    font-family: var(--font-title);
+    font-size: 0.7rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .mapa-subtitulo {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    color: var(--copper-light);
+    margin-top: 2px;
+  }
+
+  .mapa-container {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  @media (max-width: 600px) {
+    .mapa-container { grid-template-columns: 1fr; }
+  }
+
+  .mapa-iframe-wrapper {
+    border: 1px solid var(--iron-light);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .mapa-iframe-wrapper iframe {
+    width: 100%;
+    height: 240px;
+    border: none;
+    display: block;
+    filter: sepia(40%) hue-rotate(15deg) saturate(0.8);
+  }
+
+  .mapa-info {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .mapa-info-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .mapa-info-item .icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+
+  .mapa-info-label {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--copper);
+    margin-bottom: 2px;
+  }
+
+  .mapa-info-value {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--cream);
+    line-height: 1.3;
+  }
+
+  .btn-maps {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--copper) 0%, var(--wood-light) 100%);
+    color: var(--cream);
+    text-decoration: none;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    border-radius: 2px;
+    border: 1px solid var(--copper-light);
+    transition: all 0.3s ease;
+    margin-top: 4px;
+  }
+
+  .btn-maps:hover {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--copper) 100%);
+    box-shadow: 0 4px 16px rgba(184,115,51,0.4);
+  }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal-box {
+    background: linear-gradient(160deg, var(--iron) 0%, var(--iron-mid) 100%);
+    border: 2px solid var(--copper);
+    border-radius: 2px;
+    padding: 36px 32px;
+    max-width: 440px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 30px rgba(184,115,51,0.2);
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+  }
+
+  .modal-overlay.open .modal-box {
+    transform: translateY(0);
+  }
+
+  .modal-box::before, .modal-box::after {
+    content: '';
+    position: absolute;
+    border: 1px solid rgba(201,168,76,0.3);
+  }
+
+  .modal-box::before { inset: 6px; }
+  .modal-box::after  { inset: 10px; border-color: rgba(201,168,76,0.12); }
+
+  .modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold);
+    width: 28px;
+    height: 28px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover { background: rgba(201,168,76,0.15); }
+
+  .modal-title {
+    font-family: var(--font-title);
+    font-size: 0.75rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 6px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .modal-subtitle {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--cream-dark);
+    text-align: center;
+    font-style: italic;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-label {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--copper-light);
+  }
+
+  .form-input {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--iron-light);
+    border-radius: 2px;
+    padding: 10px 14px;
+    color: var(--cream);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus {
+    border-color: var(--copper);
+    box-shadow: 0 0 0 2px rgba(184,115,51,0.15);
+  }
+
+  .form-input::placeholder { color: rgba(245,237,224,0.25); }
+
+  .btn-confirmar {
+    background: linear-gradient(135deg, var(--copper) 0%, var(--wood) 100%);
+    border: 1px solid var(--copper-light);
+    color: var(--cream);
+    font-family: var(--font-title);
+    font-size: 0.65rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    padding: 14px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 8px;
+  }
+
+  .btn-confirmar:hover {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--copper) 100%);
+    box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  }
+
+  .form-error {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    color: #e07070;
+    display: none;
+    margin-top: -8px;
+  }
+
+  .form-error.visible { display: block; }
+
+  /* ─── TOAST ─── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: linear-gradient(135deg, var(--iron) 0%, #222 100%);
+    border: 1px solid var(--gold);
+    border-radius: 2px;
+    padding: 14px 24px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--gold-light);
+    letter-spacing: 1px;
+    z-index: 2000;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: var(--shadow-iron);
+    text-align: center;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ─── FOOTER ─── */
+  footer {
+    position: relative;
+    z-index: 5;
+    text-align: center;
+    padding: 20px;
+    border-top: 1px solid rgba(201,168,76,0.15);
+    font-family: var(--font-ui);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgba(245,237,224,0.3);
+    text-transform: uppercase;
+  }
+
+  /* ─── LOADING STATE ─── */
+  .loading-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 8px;
+    color: rgba(201,168,76,0.4);
+    font-family: var(--font-ui);
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(201,168,76,0.15);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+</style>
+</head>
+
+<body>
+
+<!-- ═══════════════════════════════════════
+     HEADER
+═══════════════════════════════════════ -->
+<header>
+  <div class="visit-counter">
+    Visitas: <span id="visit-count">—</span>
+  </div>
+
+  <div class="logo-wrapper">
+    <!-- Logo oficial subido por el usuario -->
+    <img
+      src="Gemini_Generated_Image_yg7744yg7744yg77.png"
+      alt="MiniMarket Alberdi"
+      class="logo-img"
+      onerror="this.style.display='none'"
+    />
+    <h1 class="logo-title">MiniMarket<br>Alberdi</h1>
+    <p class="logo-subtitle">San Rafael · Mendoza · Argentina</p>
+  </div>
+
+  <div class="art-deco-divider">
+    <span>✦</span>
+  </div>
+</header>
+
+
+<!-- ═══════════════════════════════════════
+     MAIN GRID
+═══════════════════════════════════════ -->
+<main>
+
+  <!-- ── HÉROE CENTRAL ── -->
+  <section class="hero-center iron-frame">
+    <p class="hero-tagline">
+      El sabor del barrio,<br>
+      la calidad de <em>siempre</em>.
+    </p>
+
+    <!-- Botón de carrito con validación de datos -->
+    <button class="btn-cart" id="btn-open-cart" aria-label="Abrir carrito de compras">
+      <div class="corner-ornament tl"></div>
+      <div class="corner-ornament tr"></div>
+      <div class="corner-ornament bl"></div>
+      <div class="corner-ornament br"></div>
+      <span class="cart-icon-3d">🛒</span>
+      Iniciar pedido
+    </button>
+
+    <div class="features-row">
+      <div class="feature-badge"><span>🥩</span> Carnes frescas</div>
+      <div class="feature-badge"><span>🥖</span> Panadería</div>
+      <div class="feature-badge"><span>🧃</span> Bebidas</div>
+      <div class="feature-badge"><span>🇦🇷</span> Productos locales</div>
+    </div>
+  </section>
+
+
+  <!-- ── PANEL OFERTAS (derecha) ── -->
+  <!--
+    LÓGICA FIRESTORE:
+    1. Al cargar la página, se inicializa Firebase con las credenciales provistas.
+    2. Se ejecuta una query a la colección "ofertas" filtrando donde campo "activa" == true.
+    3. Si hay resultados, se monta un carrusel automático cada 4 segundos.
+    4. Si no hay resultados (colección vacía o todos con activa:false), se muestra un fallback estilizado.
+  -->
+  <aside class="panel-ofertas iron-frame" id="panel-ofertas">
+    <div class="panel-title" id="panel-ofertas-title">✦ Ofertas del día ✦</div>
+    <div class="ofertas-carousel" id="ofertas-carousel">
+      <div class="loading-placeholder">
+        <div class="spinner"></div>
+        Consultando ofertas…
+      </div>
+    </div>
+    <div class="carousel-dots" id="carousel-dots"></div>
+  </aside>
+
+
+  <!-- ── SECCIÓN MAPA ── -->
+  <section class="section-mapa iron-frame">
+    <div class="mapa-header">
+      <span class="mapa-icon">📍</span>
+      <div>
+        <div class="mapa-titulo">✦ Dónde encontrarnos ✦</div>
+        <div class="mapa-subtitulo">San Rafael, Mendoza — Argentina</div>
+      </div>
+    </div>
+
+    <div class="mapa-container">
+      <div class="mapa-iframe-wrapper">
+        <!-- Mapa embebido con coordenadas exactas del negocio -->
+        <iframe
+          title="Ubicación MiniMarket Alberdi"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3d-34.6351209!2d-68.3190727!3d-34.6351209!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzTCsDM4JzA2LjQiUyA2OMKwMTknMDguNyJX!5e0!3m2!1ses!2sar!4v1700000000000!5m2!1ses!2sar&q=Islas+Malvinas+1225+San+Rafael+Mendoza+Argentina"
+          allowfullscreen
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+        ></iframe>
+      </div>
+
+      <div class="mapa-info">
+        <div class="mapa-info-item">
+          <span class="icon">🏠</span>
+          <div>
+            <div class="mapa-info-label">Dirección</div>
+            <div class="mapa-info-value">Islas Malvinas 1225<br>San Rafael, Mendoza</div>
+          </div>
+        </div>
+        <div class="mapa-info-item">
+          <span class="icon">🕐</span>
+          <div>
+            <div class="mapa-info-label">Horarios</div>
+            <div class="mapa-info-value">Lunes a Sábado<br>8:00 – 21:00 hs</div>
+          </div>
+        </div>
+        <div class="mapa-info-item">
+          <span class="icon">📱</span>
+          <div>
+            <div class="mapa-info-label">WhatsApp</div>
+            <div class="mapa-info-value">+54 9 …</div>
+          </div>
+        </div>
+        <a
+          class="btn-maps"
+          href="https://www.google.com/maps/dir/?api=1&destination=Islas+Malvinas+1225,+San+Rafael,+Mendoza,+Argentina"
+          target="_blank"
+          rel="noopener"
+        >
+          📍 Cómo llegar
+        </a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+
+<!-- ═══════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════ -->
+<footer>
+  © 2025 MiniMarket Alberdi · San Rafael, Mendoza · Todos los derechos reservados
+</footer>
+
+
+<!-- ═══════════════════════════════════════
+     MODAL – DATOS DEL CLIENTE
+═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <button class="modal-close" id="modal-close" aria-label="Cerrar">✕</button>
+    <div class="modal-title">✦ Datos del pedido ✦</div>
+    <p class="modal-subtitle">Completá tus datos para continuar con la compra</p>
+
+    <div class="modal-form" id="modal-form">
+      <div class="form-group">
+        <label class="form-label" for="input-nombre">Nombre completo *</label>
+        <input class="form-input" type="text" id="input-nombre" placeholder="Ej: María García" autocomplete="name" />
+        <span class="form-error" id="error-nombre">Ingresá tu nombre completo.</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="input-telefono">WhatsApp *</label>
+        <input class="form-input" type="tel" id="input-telefono" placeholder="Ej: +54 9 260 4xxxxxx" autocomplete="tel" />
+        <span class="form-error" id="error-telefono">Ingresá un número de WhatsApp válido.</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="input-email">Correo electrónico *</label>
+        <input class="form-input" type="email" id="input-email" placeholder="Ej: maria@correo.com" autocomplete="email" />
+        <span class="form-error" id="error-email">Ingresá un correo electrónico válido.</span>
+      </div>
+      <button class="btn-confirmar" id="btn-confirmar">Confirmar y continuar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     TOAST NOTIFICATION
+═══════════════════════════════════════ -->
+<div class="toast" id="toast"></div>
+
+
+<!-- ═══════════════════════════════════════
+     JAVASCRIPT (ES Module)
+     – Firebase/Firestore inicialización
+     – Carrusel de ofertas
+     – Validación de cliente con LocalStorage
+     – Contador de visitas
+═══════════════════════════════════════ -->
+<script type="module">
+
+  // ── Importaciones Firebase (via importmap definido en <head>) ──
+  import { initializeApp }                    from 'firebase/app';
+  import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+
+  // ── 1. CONFIGURACIÓN FIREBASE ──────────────────────────────────
+  const firebaseConfig = {
+    apiKey:            "AIzaSyD3YBS-iy7Xy7jNbxm6VvVoORZQNSSgLco",
+    authDomain:        "minimarket-alberdi.firebaseapp.com",
+    databaseURL:       "https://minimarket-alberdi-default-rtdb.firebaseio.com",
+    projectId:         "minimarket-alberdi",
+    storageBucket:     "minimarket-alberdi.firebasestorage.app",
+    messagingSenderId: "586362734543",
+    appId:             "1:586362734543:web:cdcc9c9c5bb28e01d1f4ba",
+    measurementId:     "G-3TZDJE4RTG"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);   // Instancia de Cloud Firestore
+
+
+  // ── 2. CONTADOR DE VISITAS (LocalStorage) ──────────────────────
+  const visitKey = 'mma_visit_count';
+  const prevCount = parseInt(localStorage.getItem(visitKey) || '0', 10);
+  const newCount  = prevCount + 1;
+  localStorage.setItem(visitKey, newCount);
+  document.getElementById('visit-count').textContent = newCount.toLocaleString('es-AR');
+
+
+  // ── 3. FIRESTORE – LECTURA DE OFERTAS ACTIVAS ─────────────────
+  //    Colección: "ofertas"
+  //    Filtro:    campo "activa" == true
+  //    Si retorna 0 documentos → fallback estilizado.
+  async function cargarOfertas() {
+    const carousel = document.getElementById('ofertas-carousel');
+    const dotsEl   = document.getElementById('carousel-dots');
+
+    try {
+      // Construcción de la query con filtro
+      const q = query(
+        collection(db, 'ofertas'),
+        where('activa', '==', true)
+      );
+
+      const snapshot = await getDocs(q);
+      const ofertas = [];
+      snapshot.forEach(doc => ofertas.push({ id: doc.id, ...doc.data() }));
+
+      if (ofertas.length === 0) {
+        // ── FALLBACK: sin ofertas activas ──
+        mostrarFallback(carousel, dotsEl);
+        return;
+      }
+
+      // ── CARRUSEL CON OFERTAS ──
+      carousel.innerHTML = '';
+      dotsEl.innerHTML   = '';
+
+      ofertas.forEach((oferta, idx) => {
+        // Formatear la vigencia con fechaFin (Timestamp de Firestore o string)
+        let vigencia = '';
+        if (oferta.fechaFin) {
+          const fecha = oferta.fechaFin.toDate
+            ? oferta.fechaFin.toDate()
+            : new Date(oferta.fechaFin);
+          vigencia = `Válido hasta ${fecha.toLocaleDateString('es-AR', { day: '2-digit', month: 'long' })}`;
+        }
+
+        // Crear slide
+        const slide = document.createElement('div');
+        slide.className = `oferta-slide${idx === 0 ? ' active' : ''}`;
+        slide.innerHTML = `
+          <span class="oferta-emoji">${oferta.emoji || '🏷️'}</span>
+          <div class="oferta-nombre">${oferta.nombre}</div>
+          <div class="oferta-precio-normal">Antes: $${Number(oferta.precioOriginal).toLocaleString('es-AR')}</div>
+          <div class="oferta-precio-oferta">$${Number(oferta.precioOferta).toLocaleString('es-AR')}</div>
+          ${vigencia ? `<div class="oferta-vigencia">📅 ${vigencia}</div>` : ''}
+        `;
+        carousel.appendChild(slide);
+
+        // Dot
+        const dot = document.createElement('button');
+        dot.className = `carousel-dot${idx === 0 ? ' active' : ''}`;
+        dot.setAttribute('aria-label', `Oferta ${idx + 1}`);
+        dot.addEventListener('click', () => goToSlide(idx));
+        dotsEl.appendChild(dot);
+      });
+
+      // Arrancar rotación automática si hay más de 1 oferta
+      if (ofertas.length > 1) {
+        let current = 0;
+        setInterval(() => {
+          current = (current + 1) % ofertas.length;
+          goToSlide(current);
+        }, 4500);
+      }
+
+    } catch (err) {
+      console.error('[Firestore] Error al obtener ofertas:', err);
+      mostrarFallback(carousel, dotsEl, true);
+    }
+  }
+
+  // Navegar a slide por índice
+  function goToSlide(idx) {
+    document.querySelectorAll('.oferta-slide').forEach((s, i) => {
+      s.classList.toggle('active', i === idx);
+    });
+    document.querySelectorAll('.carousel-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === idx);
+    });
+  }
+
+  // Render del estado fallback (sin ofertas activas o error de red)
+  function mostrarFallback(carousel, dotsEl, esError = false) {
+    document.getElementById('panel-ofertas-title').textContent = '✦ El recomendado de hoy ✦';
+    dotsEl.innerHTML = '';
+    carousel.innerHTML = `
+      <div class="oferta-fallback">
+        <span class="oferta-fallback-icon">✨</span>
+        <div class="oferta-fallback-title">¡Nuevas ofertas en camino!</div>
+        <p class="oferta-fallback-text">
+          Estamos preparando los mejores precios para vos.<br>
+          Volvé pronto o visitanos en el local.
+        </p>
+      </div>
+    `;
+  }
+
+  // Iniciar lectura de ofertas
+  cargarOfertas();
+
+
+  // ── 4. MODAL – VALIDACIÓN Y PERSISTENCIA EN LOCALSTORAGE ──────
+  const modalOverlay = document.getElementById('modal-overlay');
+  const btnOpenCart  = document.getElementById('btn-open-cart');
+  const btnClose     = document.getElementById('modal-close');
+  const btnConfirmar = document.getElementById('btn-confirmar');
+
+  const LS_KEY = 'mma_cliente';
+
+  // Abrir modal: si ya existen datos guardados, omitir y mostrar mensaje
+  btnOpenCart.addEventListener('click', () => {
+    const guardado = localStorage.getItem(LS_KEY);
+    if (guardado) {
+      const cliente = JSON.parse(guardado);
+      showToast(`¡Hola de nuevo, ${cliente.nombre.split(' ')[0]}! 🛒 Podés continuar con tu pedido.`);
+      return;
+    }
+    abrirModal();
+  });
+
+  btnClose.addEventListener('click', cerrarModal);
+
+  modalOverlay.addEventListener('click', e => {
+    if (e.target === modalOverlay) cerrarModal();
+  });
+
+  function abrirModal() {
+    modalOverlay.classList.add('open');
+    document.getElementById('input-nombre').focus();
+  }
+
+  function cerrarModal() {
+    modalOverlay.classList.remove('open');
+    // Limpiar errores visuales
+    document.querySelectorAll('.form-error').forEach(el => el.classList.remove('visible'));
+  }
+
+  // Confirmar datos del cliente
+  btnConfirmar.addEventListener('click', () => {
+    const nombre   = document.getElementById('input-nombre').value.trim();
+    const telefono = document.getElementById('input-telefono').value.trim();
+    const email    = document.getElementById('input-email').value.trim();
+
+    let valido = true;
+
+    // Validar nombre (mínimo 3 caracteres, al menos dos palabras)
+    const errorNombre = document.getElementById('error-nombre');
+    if (nombre.length < 3 || !nombre.includes(' ')) {
+      errorNombre.classList.add('visible');
+      valido = false;
+    } else {
+      errorNombre.classList.remove('visible');
+    }
+
+    // Validar teléfono (sólo dígitos y símbolos básicos, mínimo 8 dígitos)
+    const errorTelefono = document.getElementById('error-telefono');
+    const digitosTel = telefono.replace(/\D/g, '');
+    if (digitosTel.length < 8) {
+      errorTelefono.classList.add('visible');
+      valido = false;
+    } else {
+      errorTelefono.classList.remove('visible');
+    }
+
+    // Validar email
+    const errorEmail = document.getElementById('error-email');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      errorEmail.classList.add('visible');
+      valido = false;
+    } else {
+      errorEmail.classList.remove('visible');
+    }
+
+    if (!valido) return;
+
+    // Guardar en LocalStorage
+    const cliente = { nombre, telefono, email, registrado: new Date().toISOString() };
+    localStorage.setItem(LS_KEY, JSON.stringify(cliente));
+
+    cerrarModal();
+    showToast(`✦ ¡Bienvenido/a, ${nombre.split(' ')[0]}! Tu pedido está listo para comenzar.`);
+  });
+
+
+  // ── 5. TOAST HELPER ───────────────────────────────────────────
+  function showToast(msg, duration = 3500) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+</script>
+
+</body>
+</html>
